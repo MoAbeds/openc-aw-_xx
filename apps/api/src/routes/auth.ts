@@ -5,6 +5,8 @@ import crypto from "crypto";
 import { db } from "../db/index.js";
 import { users, workspaces, sessions } from "../db/schema.js";
 import { eq } from "drizzle-orm";
+import { emailQueue } from "../queues/index.js";
+import { pushNotificationService } from "../services/PushNotificationService.js";
 
 // ── Zod Schemas ─────────────────────────────────────────────────────────────
 
@@ -93,6 +95,14 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
                 userId,
                 token,
                 expiresAt,
+            });
+
+            // 6. Trigger Welcome Email
+            await emailQueue.add("welcome", {
+                to: email,
+                subject: "Welcome to APEX OS",
+                templateId: "welcome",
+                props: { userName: name, workspaceName: `${name}'s Workspace` }
             });
 
             return reply.code(201).send({
@@ -241,6 +251,23 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
             }
 
             return reply.code(200).send({ success: true });
+        }
+    );
+
+    // ── POST /auth/push/subscribe ─────────────────────────────────────────────
+    app.post(
+        "/push/subscribe",
+        { preHandler: [app.authenticate] },
+        async (request, reply) => {
+            const { userId } = request.user;
+            const subscription = request.body as any;
+
+            if (!subscription || !subscription.endpoint) {
+                return reply.code(400).send({ error: "Invalid subscription" });
+            }
+
+            await pushNotificationService.saveSubscription(userId, subscription);
+            return reply.send({ success: true });
         }
     );
 };

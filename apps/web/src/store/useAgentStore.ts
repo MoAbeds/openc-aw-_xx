@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { AgentDTO, AgentLogEntry } from "@apex-os/types";
+import type { AgentDTO, AgentLogEntry } from "@apex-os/types";
 import { api } from "../lib/api";
 
 interface AgentState {
@@ -8,12 +8,23 @@ interface AgentState {
     error: string | null;
     selectedAgentId: string | null;
     globalLogs: AgentLogEntry[];
+    delegationEvents: Array<{
+        sourceAgentId: string;
+        targetAgentId: string;
+        taskId: string;
+        status: "pending" | "completed";
+    }>;
 
     fetchAgents: () => Promise<void>;
     updateAgentStatus: (agentId: string, status: string) => void;
     addAgent: (agent: AgentDTO) => void;
     setSelectedAgentId: (id: string | null) => void;
     addLog: (log: AgentLogEntry) => void;
+    addDelegationEvent: (event: { sourceAgentId: string; targetAgentId: string; taskId: string; status: "pending" | "completed" }) => void;
+    marketplaceSkills: any[];
+    fetchMarketplaceSkills: () => Promise<void>;
+    installSkill: (agentId: string, marketplaceSkillId: string) => Promise<void>;
+    removeSkill: (agentId: string, skillId: string) => Promise<void>;
 }
 
 export const useAgentStore = create<AgentState>()((set, get) => ({
@@ -22,6 +33,8 @@ export const useAgentStore = create<AgentState>()((set, get) => ({
     error: null,
     selectedAgentId: null,
     globalLogs: [],
+    delegationEvents: [],
+    marketplaceSkills: [],
 
     fetchAgents: async () => {
         set({ loading: true });
@@ -59,4 +72,36 @@ export const useAgentStore = create<AgentState>()((set, get) => ({
             globalLogs: [log, ...state.globalLogs].slice(0, 200), // Keep last 200
         }));
     },
+
+    addDelegationEvent: (event) => {
+        set((state) => ({
+            delegationEvents: [...state.delegationEvents, event]
+        }));
+
+        // Auto-remove animation after 3 seconds
+        setTimeout(() => {
+            set((state) => ({
+                delegationEvents: state.delegationEvents.filter((e) => e.taskId !== event.taskId)
+            }));
+        }, 3000);
+    },
+
+    fetchMarketplaceSkills: async () => {
+        try {
+            const { data } = await api.get<{ data: any[] }>("/api/agents/skills/marketplace");
+            set({ marketplaceSkills: data });
+        } catch (err: any) {
+            console.error("Marketplace fetch error:", err);
+        }
+    },
+
+    installSkill: async (agentId, marketplaceSkillId) => {
+        await api.post(`/api/agents/${agentId}/skills/install`, { marketplaceSkillId });
+        await get().fetchAgents(); // Refresh agent data to show new skill
+    },
+
+    removeSkill: async (agentId, skillId) => {
+        await api.delete(`/api/agents/${agentId}/skills/${skillId}`);
+        await get().fetchAgents();
+    }
 }));

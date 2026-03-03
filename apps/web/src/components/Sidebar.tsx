@@ -9,15 +9,24 @@ import {
     PlusCircle,
     Terminal,
     LogOut,
-    ShieldAlert
+    ShieldAlert,
+    BookOpen,
+    Users,
+    Workflow,
+    CreditCard
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
+import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
 const navItems = [
     { label: "Fleet Monitor", href: "/dashboard", icon: LayoutDashboard },
     { label: "Agent Builder", href: "/dashboard/builder", icon: PlusCircle },
+    { label: "Course to Agent", href: "/dashboard/course-builder", icon: BookOpen },
     { label: "Global Logs", href: "/dashboard/logs", icon: Terminal },
+    { label: "Workflows", href: "/dashboard/workflows", icon: Workflow },
+    { label: "Clients", href: "/dashboard/clients", icon: Users },
+    { label: "Billing", href: "/dashboard/billing", icon: CreditCard },
     { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -27,7 +36,7 @@ export function Sidebar() {
     const user = useAuthStore((state) => state.user);
 
     return (
-        <div className="w-64 h-screen bg-surface border-r border-border flex flex-col fixed left-0 top-0 z-50">
+        <div className="w-64 h-screen bg-surface border-r border-border hidden md:flex flex-col fixed left-0 top-0 z-50">
             <div className="p-6">
                 <div className="flex items-center gap-3 mb-8">
                     <div className="w-8 h-8 bg-accent-teal rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(0,255,209,0.3)]">
@@ -35,6 +44,8 @@ export function Sidebar() {
                     </div>
                     <h1 className="text-xl font-display font-bold tracking-wider italic">APEX OS</h1>
                 </div>
+
+                <WorkspaceSwitcher />
 
                 <nav className="space-y-1">
                     {navItems.map((item) => {

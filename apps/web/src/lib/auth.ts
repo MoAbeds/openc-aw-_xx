@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { SignJWT, jwtVerify } from "jose";
+import { jwtVerify } from "jose";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-at-least-32-chars-long";
 const key = new TextEncoder().encode(JWT_SECRET);

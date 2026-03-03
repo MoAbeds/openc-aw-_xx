@@ -1,4 +1,4 @@
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import { env } from "./env.js";
 
 // Create standard Redis connection for commands / publishing

@@ -1,8 +1,8 @@
 "use client";
 
-import { AgentDTO } from "@apex-os/types";
+import type { AgentDTO } from "@apex-os/types";
 import { cn } from "@/lib/utils";
-import { ChevronRight, ChevronDown, Circle, Zap, Shield, MessageSquare, Monitor } from "lucide-react";
+import { ChevronRight, ChevronDown, Circle, Zap, Shield, MessageSquare, Monitor, ArrowDown } from "lucide-react";
 import { useState } from "react";
 import { useAgentStore } from "@/store/useAgentStore";
 
@@ -13,7 +13,7 @@ interface AgentNodeProps {
 
 export function AgentNode({ agent, level }: AgentNodeProps) {
     const [isExpanded, setIsExpanded] = useState(true);
-    const { selectedAgentId, setSelectedAgentId, agents } = useAgentStore();
+    const { selectedAgentId, setSelectedAgentId, agents, delegationEvents } = useAgentStore();
 
     const children = agents.filter(a => a.parentId === agent.id);
     const isSelected = selectedAgentId === agent.id;
@@ -81,6 +81,14 @@ export function AgentNode({ agent, level }: AgentNodeProps) {
 
                 {isSelected && (
                     <div className="w-1 h-3 bg-accent-teal rounded-full" />
+                )}
+
+                {/* Delegation Animation Indicator */}
+                {delegationEvents.some(e => e.targetAgentId === agent.id) && (
+                    <div className="absolute right-8 top-1/2 -translate-y-1/2 flex items-center gap-1 text-accent-teal animate-bounce">
+                        <ArrowDown className="w-3 h-3" />
+                        <span className="text-[8px] font-bold uppercase tracking-tighter">Inbound Mission</span>
+                    </div>
                 )}
             </div>
 

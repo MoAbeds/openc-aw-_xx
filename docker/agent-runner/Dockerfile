@@ -22,6 +22,9 @@ WORKDIR /app/agent
 # Create volume mount point for persistent memory
 VOLUME /app/agent/memory
 
+# Copy and prepare internal skills
+COPY skills/ /app/internal-skills/
+
 # Copy and prepare entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh

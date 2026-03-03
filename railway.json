@@ -1,0 +1,39 @@
+{
+    "$schema": "https://railway.app/railway.schema.json",
+    "services": {
+        "api": {
+            "source": {
+                "directory": "apps/api"
+            },
+            "build": {
+                "builder": "DOCKERFILE",
+                "dockerfilePath": "Dockerfile"
+            },
+            "deploy": {
+                "numReplicas": 1,
+                "sleepOnIdle": false,
+                "healthcheckPath": "/api/health",
+                "env": {
+                    "PORT": "3001",
+                    "HOST": "0.0.0.0"
+                }
+            }
+        },
+        "web": {
+            "source": {
+                "directory": "apps/web"
+            },
+            "build": {
+                "builder": "DOCKERFILE",
+                "dockerfilePath": "Dockerfile"
+            },
+            "deploy": {
+                "numReplicas": 1,
+                "sleepOnIdle": false,
+                "env": {
+                    "PORT": "3000"
+                }
+            }
+        }
+    }
+}

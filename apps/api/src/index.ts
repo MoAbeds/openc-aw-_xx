@@ -1,8 +1,17 @@
 import "dotenv/config";
 import { build } from "./app.js";
 import { env } from "./lib/env.js";
+import * as Sentry from "@sentry/node";
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
+
+if (env.SENTRY_DSN) {
+    Sentry.init({
+        dsn: env.SENTRY_DSN,
+        environment: env.NODE_ENV,
+        tracesSampleRate: 1.0,
+    });
+}
 
 async function start() {
     let app: Awaited<ReturnType<typeof build>> | undefined;
@@ -15,6 +24,10 @@ async function start() {
         // Start background workers
         const { agentStatusSync } = await import("./workers/AgentStatusSync.js");
         agentStatusSync.start();
+
+        // Start system-wide recurring schedules
+        const { initCronJobs } = await import("./cron/index.js");
+        initCronJobs();
 
         app.log.info(
             {
@@ -57,12 +70,15 @@ async function start() {
     // Catch unhandled rejections — log and exit so the process manager restarts
     process.on("unhandledRejection", (reason) => {
         console.error("Unhandled promise rejection", reason);
-        process.exit(1);
+        Sentry.captureException(reason);
+        // Give Sentry some time to send before exit
+        Sentry.flush(2000).then(() => process.exit(1));
     });
 
     process.on("uncaughtException", (err) => {
         console.error("Uncaught exception", err);
-        process.exit(1);
+        Sentry.captureException(err);
+        Sentry.flush(2000).then(() => process.exit(1));
     });
 }
 

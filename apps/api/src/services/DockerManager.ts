@@ -3,6 +3,7 @@ import { AgentDTO } from "@apex-os/types";
 import { env } from "../lib/env.js";
 import path from "path";
 import fs from "fs/promises";
+import { containerRestartsTotal } from "./PrometheusService.js";
 
 export interface ContainerStatus {
     id: string;
@@ -12,7 +13,7 @@ export interface ContainerStatus {
 }
 
 class DockerManager {
-    private docker: Docker;
+    public docker: Docker;
 
     constructor() {
         // Connect to local docker daemon
@@ -114,6 +115,7 @@ class DockerManager {
      */
     async restartAgent(agentId: string): Promise<void> {
         const container = this.docker.getContainer(`apex-agent-${agentId}`);
+        containerRestartsTotal.inc({ agentId });
         await container.restart();
     }
 
@@ -173,6 +175,36 @@ class DockerManager {
             all: true,
             filters: JSON.stringify({ label: ["apex.agentId"] }),
         });
+    }
+
+    /**
+     * Injects a skill JS file into a running agent container and triggers reload
+     */
+    async injectSkill(agentId: string, skillName: string, code: string): Promise<void> {
+        const container = this.docker.getContainer(`apex-agent-${agentId}`);
+        const filename = `${skillName.toLowerCase().replace(/\s+/g, "_")}.js`;
+        const filePath = `/app/agent/skills/${filename}`;
+
+        // 1. Write the file into the container
+        // We use 'exec' to write the file directly to avoid complex tar-balling for a single file
+        const exec = await container.exec({
+            Cmd: ["sh", "-c", `echo ${JSON.stringify(code)} > ${filePath}`],
+            AttachStdout: true,
+            AttachStderr: true,
+        });
+
+        const stream = await exec.start({});
+        await new Promise((resolve, reject) => {
+            container.modem.followProgress(stream, (err: Error | null, res: any) => err ? reject(err) : resolve(res));
+        });
+
+        // 2. Trigger hot-reload (Signal OpenClaw)
+        // Usually 'openclaw reload' or a custom signal
+        const reloadExec = await container.exec({
+            Cmd: ["sh", "-c", "openclaw reload || pkill -HUP openclaw || true"],
+            AttachStdout: true,
+        });
+        await reloadExec.start({});
     }
 }
 

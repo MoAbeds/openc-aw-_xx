@@ -47,7 +47,13 @@ if [ -n "$SKILLS_MANIFEST" ] && [ "$SKILLS_MANIFEST" != "[]" ]; then
     "
 fi
 
-# 4. Ensure memory directory exists (Volume mount point)
+# 4. Inject Internal Skills (Pre-baked / APEX specific)
+echo "Injecting internal APEX delegation protocol..."
+if [ -f "/app/internal-skills/delegate.js" ]; then
+    cp /app/internal-skills/delegate.js skills/
+fi
+
+# 5. Ensure memory directory exists (Volume mount point)
 mkdir -p memory
 
 echo "--- 🚀 Launching OpenClaw ---"

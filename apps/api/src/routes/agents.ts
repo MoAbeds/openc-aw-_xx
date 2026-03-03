@@ -6,6 +6,12 @@ import { agents, agentSkills, agentLogs, agentTasks } from "../db/schema.js";
 import { eq, desc, and } from "drizzle-orm";
 import type { AgentDTO, AgentSkill } from "@apex-os/types";
 import { redis } from "../lib/redis.js";
+import { checkAgentLimit } from "../middleware/planLimits.js";
+import { withWorkspace } from "../db/utils.js";
+import { llmService } from "../services/LLMService.js";
+import { dockerManager } from "../services/DockerManager.js";
+import { skillMarketplaceService } from "../services/SkillMarketplaceService.js";
+
 
 // ── Zod Validation Schemas ────────────────────────────────────────────────
 
@@ -24,7 +30,7 @@ const updateAgentSchema = z.object({
     name: z.string().min(1).optional(),
     role: z.string().min(1).optional(),
     model: z.string().optional(),
-    status: z.enum(["active", "idle", "disabled", "deleted"]).optional(),
+    status: z.enum(["active", "idle", "disabled", "deleted", "error"]).optional(),
     channel: z.string().optional(),
     persona: z.string().optional(),
     color: z.string().optional(),
@@ -58,7 +64,7 @@ export const agentRoutes: FastifyPluginAsync = async (app) => {
             }
 
             const allAgents = await db.query.agents.findMany({
-                where: and(eq(agents.workspaceId, workspaceId)),
+                where: withWorkspace(agents, workspaceId),
                 orderBy: [desc(agents.createdAt)],
             });
 
@@ -73,7 +79,7 @@ export const agentRoutes: FastifyPluginAsync = async (app) => {
     // ── POST /agents ────────────────────────────────────────────────────────
     app.post(
         "/",
-        { preHandler: [app.authenticate] },
+        { preHandler: [app.authenticate, checkAgentLimit] },
         async (request, reply) => {
             const { workspaceId } = request.user;
             if (!workspaceId) {
@@ -105,7 +111,7 @@ export const agentRoutes: FastifyPluginAsync = async (app) => {
             if (!workspaceId) return reply.code(403).send({ error: "Forbidden", message: "No workspace" });
 
             const agent = await db.query.agents.findFirst({
-                where: and(eq(agents.id, id), eq(agents.workspaceId, workspaceId)),
+                where: withWorkspace(agents, workspaceId, eq(agents.id, id)),
                 with: {
                     children: true,
                     skills: true,
@@ -186,7 +192,7 @@ export const agentRoutes: FastifyPluginAsync = async (app) => {
             // Mock phase 3 implementation
             await (db as any).update(agents).set({ status: "active", updatedAt: new Date().toISOString() }).where(eq(agents.id, id));
 
-            const logEntry = { id: crypto.randomUUID(), agentId: id, level: "info", message: "Agent container started", createdAt: new Date().toISOString() };
+            const logEntry = { id: crypto.randomUUID(), workspaceId, agentId: id, level: "info", message: "Agent container started", createdAt: new Date().toISOString() };
             await (db as any).insert(agentLogs).values(logEntry);
 
             // Broadcast events
@@ -212,7 +218,7 @@ export const agentRoutes: FastifyPluginAsync = async (app) => {
             // Mock phase 3 implementation
             await (db as any).update(agents).set({ status: "idle", updatedAt: new Date().toISOString() }).where(eq(agents.id, id));
 
-            const logEntry = { id: crypto.randomUUID(), agentId: id, level: "info", message: "Agent container stopped", createdAt: new Date().toISOString() };
+            const logEntry = { id: crypto.randomUUID(), workspaceId, agentId: id, level: "info", message: "Agent container stopped", createdAt: new Date().toISOString() };
             await (db as any).insert(agentLogs).values(logEntry);
 
             // Broadcast events
@@ -238,7 +244,7 @@ export const agentRoutes: FastifyPluginAsync = async (app) => {
             // Mock phase 3 implementation
             await (db as any).update(agents).set({ status: "active", updatedAt: new Date().toISOString() }).where(eq(agents.id, id));
 
-            const logEntry = { id: crypto.randomUUID(), agentId: id, level: "warn", message: "Agent container restarted", createdAt: new Date().toISOString() };
+            const logEntry = { id: crypto.randomUUID(), workspaceId, agentId: id, level: "warn", message: "Agent container restarted", createdAt: new Date().toISOString() };
             await (db as any).insert(agentLogs).values(logEntry);
 
             // Broadcast events
@@ -262,7 +268,7 @@ export const agentRoutes: FastifyPluginAsync = async (app) => {
             if (!agent) return reply.code(404).send({ error: "Not Found", message: "Agent not found" });
 
             const logs = await db.query.agentLogs.findMany({
-                where: eq(agentLogs.agentId, id),
+                where: withWorkspace(agentLogs, workspaceId, eq(agentLogs.agentId, id)),
                 orderBy: [desc(agentLogs.createdAt)],
                 limit: 100,
             });
@@ -284,7 +290,7 @@ export const agentRoutes: FastifyPluginAsync = async (app) => {
             if (!agent) return reply.code(404).send({ error: "Not Found", message: "Agent not found" });
 
             const tasks = await db.query.agentTasks.findMany({
-                where: eq(agentTasks.agentId, id),
+                where: withWorkspace(agentTasks, workspaceId, eq(agentTasks.agentId, id)),
                 orderBy: [desc(agentTasks.createdAt)],
                 limit: 100, // Reasonable cap
             });
@@ -334,6 +340,129 @@ export const agentRoutes: FastifyPluginAsync = async (app) => {
             await (db as any).delete(agentSkills).where(and(eq(agentSkills.id, skillId), eq(agentSkills.agentId, id)));
 
             return reply.send({ success: true, message: "Skill removed" });
+        }
+    );
+
+    // ── POST /agents/from-course ───────────────────────────────────────────
+    app.post(
+        "/from-course",
+        { preHandler: [app.authenticate] },
+        async (request, reply) => {
+            const { transcriptText, agentName, focusArea } = request.body as {
+                transcriptText: string;
+                agentName: string;
+                focusArea: string;
+            };
+
+            const result = await llmService.extractAgentFromCourse(transcriptText, focusArea);
+            return reply.send({ data: result });
+        }
+    );
+
+    // ── POST /agents/:id/diagnose ──────────────────────────────────────────
+    app.post(
+        "/:id/diagnose",
+        { preHandler: [app.authenticate] },
+        async (request, reply) => {
+            const { id } = request.params as { id: string };
+            const { workspaceId } = request.user;
+            if (!workspaceId) return reply.code(403).send({ error: "Forbidden" });
+
+            const agent = await verifyAgentAccess(id, workspaceId);
+            if (!agent) return reply.code(404).send({ error: "Not Found" });
+
+            // Gathering Diagnostics Data
+            const [logs, skills, tasks, containerStatus] = await Promise.all([
+                db.query.agentLogs.findMany({ where: eq(agentLogs.agentId, id), limit: 50, orderBy: desc(agentLogs.createdAt) }),
+                db.query.agentSkills.findMany({ where: eq(agentSkills.agentId, id) }),
+                db.query.agentTasks.findMany({ where: eq(agentTasks.agentId, id), limit: 5, orderBy: desc(agentTasks.createdAt) }),
+                dockerManager.getContainerStatus(id),
+            ]);
+
+            const diagnosisData = {
+                agent: { name: agent.name, role: agent.role, model: agent.model, status: agent.status },
+                skills: skills.map(s => ({ name: s.skillName, enabled: s.enabled })),
+                lastLogs: logs.map(l => `[${l.level}] ${l.createdAt}: ${l.message}`),
+                lastTasks: tasks.map(t => ({ type: t.type, status: t.status })),
+                docker: containerStatus
+            };
+
+            reply.raw.setHeader("Content-Type", "text/event-stream");
+            reply.raw.setHeader("Cache-Control", "no-cache");
+            reply.raw.setHeader("Connection", "keep-alive");
+
+            for await (const chunk of llmService.diagnoseAgentStream(diagnosisData)) {
+                reply.raw.write(chunk);
+            }
+
+            reply.raw.end();
+        }
+    );
+
+    // ── GET /agents/skills/marketplace ──────────────────────────────────────
+    app.get(
+        "/skills/marketplace",
+        { preHandler: [app.authenticate] },
+        async (request, reply) => {
+            const skills = await skillMarketplaceService.getMarketplaceSkills();
+            return reply.send({ data: skills });
+        }
+    );
+
+    // ── POST /agents/:id/skills/install ─────────────────────────────────────
+    app.post(
+        "/:id/skills/install",
+        { preHandler: [app.authenticate] },
+        async (request, reply) => {
+            const { id } = request.params as { id: string };
+            const { workspaceId } = request.user;
+            const { marketplaceSkillId } = request.body as { marketplaceSkillId: string };
+
+            if (!workspaceId) return reply.code(403).send({ error: "Forbidden" });
+
+            const agent = await verifyAgentAccess(id, workspaceId);
+            if (!agent) return reply.code(404).send({ error: "Not Found" });
+
+            // 1. Resolve Skill Data
+            const marketplaceSkills = await skillMarketplaceService.getMarketplaceSkills();
+            const mkSkill = marketplaceSkills.find(s => s.id === marketplaceSkillId);
+            if (!mkSkill) return reply.code(400).send({ error: "Invalid Skill ID" });
+
+            // 2. Download code
+            const code = await skillMarketplaceService.downloadSkillCode(mkSkill.codeUrl);
+
+            // 3. Persist in DB
+            const skillId = crypto.randomUUID();
+            await (db as any).insert(agentSkills).values({
+                id: skillId,
+                agentId: id,
+                skillName: mkSkill.name,
+                enabled: true,
+                config: {}, // Initial empty config
+            });
+
+            // 4. Inject into container (Hot Reload)
+            if (agent.status === "active") {
+                try {
+                    await dockerManager.injectSkill(id, mkSkill.name, code);
+                    const logEntry = {
+                        id: crypto.randomUUID(),
+                        workspaceId,
+                        agentId: id,
+                        level: "success",
+                        message: `Skill installed and hot-reloaded: ${mkSkill.name}`,
+                        createdAt: new Date().toISOString()
+                    };
+                    await (db as any).insert(agentLogs).values(logEntry);
+                    await redis.publish(`agent:logs:${id}`, JSON.stringify(logEntry));
+                    await redis.publish(`workspace:fleet:${workspaceId}`, JSON.stringify({ type: "agent_update", agentId: id }));
+                } catch (err: any) {
+                    request.log.error(err, "Hot reload failed");
+                    // We don't fail the request, but log it
+                }
+            }
+
+            return reply.send({ success: true, skillId });
         }
     );
 };

@@ -10,6 +10,8 @@ import rateLimitPlugin from "./plugins/rateLimit.js";
 import websocketPlugin from "./plugins/websocket.js";
 import swaggerPlugin from "./plugins/swagger.js";
 import errorHandlerPlugin from "./plugins/errorHandler.js";
+import { fastifyRequestContext } from "@fastify/request-context";
+import { registerLoggingHooks } from "./plugins/observability.js";
 
 // Routes
 import { registerRoutes } from "./routes/index.js";
@@ -48,6 +50,9 @@ export async function build() {
     });
 
     // ── Infrastructure plugins (order matters) ───────────────────────────────
+    await app.register(fastifyRequestContext);
+    registerLoggingHooks(app);
+
     // Error handler registers first so it catches plugin registration errors
     await app.register(errorHandlerPlugin);
     await app.register(helmetPlugin);

@@ -1,6 +1,7 @@
 import fp from "fastify-plugin";
 import sensible from "@fastify/sensible";
 import type { FastifyInstance, FastifyError, FastifyRequest, FastifyReply } from "fastify";
+import * as Sentry from "@sentry/node";
 
 export default fp(async (app: FastifyInstance) => {
     // @fastify/sensible adds app.httpErrors.* helpers + assert support
@@ -25,6 +26,17 @@ export default fp(async (app: FastifyInstance) => {
             const statusCode = error.statusCode ?? 500;
             if (statusCode >= 500) {
                 request.log.error({ err: error }, "Internal server error");
+
+                // Report fatal/5xx to Sentry
+                Sentry.withScope((scope) => {
+                    if (request.user) {
+                        scope.setUser({ id: request.user.userId });
+                        scope.setTag("workspaceId", request.user.workspaceId);
+                    }
+                    scope.setTag("path", request.url);
+                    scope.setTag("method", request.method);
+                    Sentry.captureException(error);
+                });
             } else {
                 request.log.warn({ err: error }, "Request error");
             }

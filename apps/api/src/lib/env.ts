@@ -26,6 +26,18 @@ const envSchema = z.object({
 
     // CORS
     CORS_ORIGIN: z.string().default("http://localhost:3000"),
+
+    // LLM
+    ANTHROPIC_API_KEY: z.string().optional(),
+
+    // Portal
+    PORTAL_JWT_SECRET: z.string().default("portal-secret-key-456"),
+
+    // Billing & Email
+    STRIPE_SECRET_KEY: z.string().optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().optional(),
+    RESEND_API_KEY: z.string().optional(),
+    SENTRY_DSN: z.string().optional(),
 });
 
 function parseEnv() {

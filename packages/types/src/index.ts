@@ -58,7 +58,7 @@ export type Environment = "development" | "staging" | "production";
 
 // ── Agents ────────────────────────────────────────────────────────────────────
 
-export type AgentStatus = "active" | "idle" | "disabled" | "deleted";
+export type AgentStatus = "active" | "idle" | "disabled" | "deleted" | "error";
 export type LogLevel = "info" | "warn" | "error" | "success";
 export type TaskStatus = "pending" | "running" | "completed" | "failed";
 
@@ -107,3 +107,16 @@ export interface AgentDTO {
     children?: AgentDTO[];
     skills?: AgentSkill[];
 }
+
+// ── Workspaces ────────────────────────────────────────────────────────────────
+
+export interface WorkspaceDTO {
+    id: string;
+    name: string;
+    ownerId: string;
+    plan: "free" | "pro" | "enterprise";
+    createdAt: string;
+    updatedAt: string;
+    role?: "owner" | "admin" | "member" | "viewer";
+}
+
