@@ -1,0 +1,11 @@
+FastifyError: logger options only accepts a configuration object.
+    at FastifyError (D:\projects\agents dash\apex-os\node_modules\.pnpm\@fastify+error@4.2.0\node_modules\@fastify\error\index.js:28:14)
+    at createLogger (D:\projects\agents dash\apex-os\node_modules\.pnpm\fastify@5.7.4\node_modules\fastify\lib\logger-factory.js:100:11)
+    at processOptions (D:\projects\agents dash\apex-os\node_modules\.pnpm\fastify@5.7.4\node_modules\fastify\fastify.js:865:33)
+    at fastify (D:\projects\agents dash\apex-os\node_modules\.pnpm\fastify@5.7.4\node_modules\fastify\fastify.js:94:7)
+    at build (D:\projects\agents dash\apex-os\apps\api\src\app.ts:26:17)
+    at main (D:\projects\agents dash\apex-os\apps\api\test-boot.ts:6:27)
+    at fs (D:\projects\agents dash\apex-os\apps\api\test-boot.ts:17:1)
+    at Object.<anonymous> (D:\projects\agents dash\apex-os\apps\api\test-boot.ts:17:6)
+    at Module._compile (node:internal/modules/cjs/loader:1761:14)
+    at Object.transformer (D:\projects\agents dash\apex-os\node_modules\.pnpm\tsx@4.21.0\node_modules\tsx\dist\register-D46fvsV_.cjs:3:1104)

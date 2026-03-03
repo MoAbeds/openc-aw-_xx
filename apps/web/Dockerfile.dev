@@ -1,0 +1,33 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# apps/web — Development image
+# Hot-reload via `next dev`; source is volume-mounted from host.
+# Context: monorepo root
+# ─────────────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS base
+
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
+WORKDIR /app
+
+# ── Install dependencies ───────────────────────────────────────────────────────
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/config/package.json ./packages/config/
+COPY packages/types/package.json ./packages/types/
+COPY packages/ui/package.json ./packages/ui/
+
+RUN pnpm install --frozen-lockfile
+
+# ── Copy source (overridden by bind-mount in compose) ─────────────────────────
+COPY apps/web ./apps/web
+COPY packages ./packages
+
+WORKDIR /app/apps/web
+
+EXPOSE 3000
+
+# next dev with polling for file watchers inside Docker on Windows/macOS
+ENV WATCHPACK_POLLING=true
+ENV CHOKIDAR_USEPOLLING=true
+
+CMD ["pnpm", "dev"]

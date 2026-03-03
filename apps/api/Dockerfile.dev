@@ -1,0 +1,32 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# apps/api — Development image
+# Hot-reload via tsx watch; source is volume-mounted from host.
+# Context: monorepo root  (docker compose sets context: .)
+# ─────────────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS base
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
+WORKDIR /app
+
+# ── Install dependencies (cached layer) ───────────────────────────────────────
+# Copy only manifests first so this layer is only invalidated on dep changes
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/config/package.json ./packages/config/
+COPY packages/types/package.json ./packages/types/
+
+RUN pnpm install --frozen-lockfile
+
+# ── Copy source (overridden by bind-mount in compose) ─────────────────────────
+COPY apps/api ./apps/api
+COPY packages ./packages
+
+WORKDIR /app/apps/api
+
+# Expose Fastify port
+EXPOSE 4000
+
+# Start with tsx watch for hot-reload
+CMD ["pnpm", "dev"]

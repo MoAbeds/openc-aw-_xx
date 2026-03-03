@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Syne:wght@400..800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 240 10% 3%;
+        --foreground: 0 0% 91%;
+
+        --card: 240 10% 6%;
+        --card-foreground: 0 0% 91%;
+
+        --popover: 240 10% 6%;
+        --popover-foreground: 0 0% 91%;
+
+        --primary: 169 100% 50%;
+        --primary-foreground: 240 10% 3%;
+
+        --secondary: 240 10% 10%;
+        --secondary-foreground: 0 0% 91%;
+
+        --muted: 240 5% 40%;
+        --muted-foreground: 240 5% 40%;
+
+        --accent: 169 100% 50%;
+        --accent-foreground: 240 10% 3%;
+
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 0 0% 98%;
+
+        --border: 240 10% 15%;
+        --input: 240 10% 15%;
+        --ring: 169 100% 50%;
+
+        --radius: 0.5rem;
+
+        --font-dm-mono: 'DM Mono', monospace;
+        --font-syne: 'Syne', sans-serif;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground font-mono antialiased;
+        font-feature-settings: "rlig" 1, "calt" 1;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-display tracking-tight uppercase font-bold;
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-background;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-surface-secondary rounded-full border-2 border-background;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    @apply bg-accent-teal;
+}
+
+/* Glassmorphism utility */
+.glass {
+    @apply bg-surface/80 backdrop-blur-md border border-white/5;
+}
+
+.text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-accent-teal via-accent-purple to-accent-orange;
+}

@@ -1,0 +1,37 @@
+# ── Dependencies ─────────────────────────────────────────────────────────────
+node_modules
+.pnpm-store
+
+# ── Build output ─────────────────────────────────────────────────────────────
+dist/
+*.tsbuildinfo
+
+# ── Dev / local ──────────────────────────────────────────────────────────────
+dev.db
+dev.db-shm
+dev.db-wal
+.env
+.env.local
+.env.*.local
+
+# ── Drizzle ──────────────────────────────────────────────────────────────────
+# Include drizzle/ migrations (needed at runtime for db:migrate on boot)
+# Exclude nothing from drizzle/ intentionally
+
+# ── Editor / OS ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ── Turbo ────────────────────────────────────────────────────────────────────
+.turbo/
+
+# ── Git ──────────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── Test / CI ────────────────────────────────────────────────────────────────
+coverage/
+*.test.ts
+*.spec.ts

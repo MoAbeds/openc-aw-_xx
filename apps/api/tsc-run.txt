@@ -1,0 +1,75 @@
+﻿node.exe : 
+D:\projects\agents dash
+\apex-os\apps\api\src\l
+ib\env.ts:37
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (D:\projects\a   
+ ge...c\lib\env.ts:    
+37:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+        throw new 
+Error(`Γ¥î Invalid 
+environment variables:\
+n${issues}`);
+              ^
+
+Error: Γ¥î Invalid 
+environment variables:
+  ΓÇó JWT_SECRET: 
+JWT_SECRET must be at 
+least 32 characters
+    at parseEnv 
+(D:\projects\agents das
+h\apex-os\apps\api\src\
+lib\env.ts:37:15)
+    at <anonymous> 
+(D:\projects\agents das
+h\apex-os\apps\api\src\
+lib\env.ts:42:20)
+    at 
+Object.<anonymous> 
+(D:\projects\agents das
+h\apex-os\apps\api\src\
+lib\env.ts:42:29)
+    at Module._compile 
+(node:internal/modules/
+cjs/loader:1761:14)
+    at 
+Object.transformer 
+(D:\projects\agents das
+h\apex-os\node_modules\
+.pnpm\tsx@4.21.0\node_m
+odules\tsx\dist\registe
+r-D46fvsV_.cjs:3:1104)
+    at Module.load (nod
+e:internal/modules/cjs/
+loader:1481:32)
+    at Module._load (no
+de:internal/modules/cjs
+/loader:1300:12)
+    at TracingChannel.t
+raceSync (node:diagnost
+ics_channel:328:14)
+    at wrapModuleLoad (
+node:internal/modules/c
+js/loader:245:24)
+    at Module.require (
+node:internal/modules/c
+js/loader:1504:12)
+
+Node.js v24.12.0

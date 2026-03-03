@@ -1,0 +1,26 @@
+{
+    "name": "@apex-os/ui",
+    "version": "0.0.1",
+    "private": true,
+    "main": "./src/index.tsx",
+    "types": "./src/index.tsx",
+    "exports": {
+        ".": "./src/index.tsx"
+    },
+    "scripts": {
+        "type-check": "tsc --noEmit",
+        "lint": "eslint src/ --ext .ts,.tsx"
+    },
+    "dependencies": {
+        "react": "^18.2.0"
+    },
+    "devDependencies": {
+        "@apex-os/config": "workspace:*",
+        "@types/react": "^18.2.0",
+        "typescript": "^5.4.5"
+    },
+    "peerDependencies": {
+        "react": "^18.0.0",
+        "react-dom": "^18.0.0"
+    }
+}

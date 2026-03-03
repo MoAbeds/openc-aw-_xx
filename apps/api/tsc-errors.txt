@@ -1,0 +1,5 @@
+src/services/DockerManager.ts(127,13): error TS2375: Type '{ id: string; state: string; status: any; health: string | undefined; }' is not assignable to type 'ContainerStatus' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'health' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/services/DockerManager.ts(130,30): error TS2339: Property 'Status' does not exist on type 'ContainerInspectInfo'.
