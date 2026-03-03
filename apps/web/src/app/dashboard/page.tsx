@@ -17,35 +17,35 @@ export default function FleetDashboard() {
     useEffect(() => {
         fetchAgents();
 
-        if (token) {
-            wsManager.connect(token);
+        if (!token) return;
 
-            const handleStatusUpdate = (data: any) => {
-                if (data.agentId && data.status) {
-                    updateAgentStatus(data.agentId, data.status);
-                }
-            };
+        wsManager.connect(token);
 
-            const handleGlobalLog = (data: any) => {
-                if (data.agentId && data.message) {
-                    addLog({
-                        id: Math.random().toString(36).slice(2),
-                        agentId: data.agentId,
-                        level: data.level || "info",
-                        message: data.message,
-                        createdAt: data.timestamp || new Date().toISOString()
-                    });
-                }
-            };
+        const handleStatusUpdate = (data: any) => {
+            if (data.agentId && data.status) {
+                updateAgentStatus(data.agentId, data.status);
+            }
+        };
 
-            wsManager.on("fleet:status", handleStatusUpdate);
-            wsManager.on("agent:log", handleGlobalLog); // We might need a general log event or individual ones
+        const handleGlobalLog = (data: any) => {
+            if (data.agentId && data.message) {
+                addLog({
+                    id: Math.random().toString(36).slice(2),
+                    agentId: data.agentId,
+                    level: (data.level as any) || "info",
+                    message: data.message,
+                    createdAt: data.timestamp || new Date().toISOString()
+                });
+            }
+        };
 
-            return () => {
-                wsManager.off("fleet:status", handleStatusUpdate);
-                wsManager.off("agent:log", handleGlobalLog);
-            };
-        }
+        wsManager.on("fleet:status", handleStatusUpdate);
+        wsManager.on("agent:log", handleGlobalLog); // We might need a general log event or individual ones
+
+        return () => {
+            wsManager.off("fleet:status", handleStatusUpdate);
+            wsManager.off("agent:log", handleGlobalLog);
+        };
     }, [token, fetchAgents, updateAgentStatus, addLog]);
 
     // Root agents for the tree

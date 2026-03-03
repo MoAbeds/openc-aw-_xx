@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { UserDTO } from "@apex-os/types";
+import { User } from "@apex-os/types";
 
 interface AuthState {
-    user: UserDTO | null;
+    user: User | null;
     workspaceId: string | null;
     token: string | null;
-    setAuth: (user: UserDTO, token: string, workspaceId: string) => void;
+    setAuth: (user: User, token: string, workspaceId: string) => void;
     logout: () => void;
 }
 

@@ -43,7 +43,7 @@ export function Sidebar() {
                         return (
                             <Link
                                 key={item.href}
-                                href={item.href}
+                                href={item.href as any}
                                 className={cn(
                                     "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group text-sm",
                                     active
@@ -62,7 +62,7 @@ export function Sidebar() {
             <div className="mt-auto p-4 border-t border-border bg-black/20">
                 <div className="flex items-center gap-3 px-3 py-2 mb-4">
                     <div className="w-8 h-8 rounded-full bg-surface-secondary border border-border flex items-center justify-center overflow-hidden">
-                        {user?.avatar ? <img src={user.avatar} alt="avatar" /> : <div className="w-full h-full bg-accent-purple/20" />}
+                        {user?.avatarUrl ? <img src={user.avatarUrl} alt="avatar" /> : <div className="w-full h-full bg-accent-purple/20" />}
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{user?.name || "User"}</p>
